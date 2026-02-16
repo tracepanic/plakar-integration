@@ -29,27 +29,13 @@ func NewTestImporter(ctx context.Context, opts *connectors.Options, proto string
 		return nil, fmt.Errorf("missing location")
 	}
 
-	rawPath := strings.TrimPrefix(loc, proto+"://")
-	if rawPath == "" {
+	scanDir := strings.TrimPrefix(loc, proto+"://")
+	if scanDir == "" {
 		return nil, fmt.Errorf("empty path after %s://", proto)
 	}
 
-	rawPath = os.ExpandEnv(rawPath)
-	if rawPath[:1] == "~" {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			rawPath = filepath.Join(home, rawPath[1:])
-		}
-	}
-
-	cleanPath := filepath.Clean(rawPath)
-
-	if _, err := os.Stat(cleanPath); err != nil {
-		return nil, fmt.Errorf("cannot access location: %w", err)
-	}
-
 	return &TestImporter{
-		scanDir: cleanPath,
+		scanDir: scanDir,
 	}, nil
 }
 
