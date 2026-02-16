@@ -20,7 +20,7 @@ type TestImporter struct {
 }
 
 func init() {
-	importer.Register("test", 0, NewTestImporter)
+	importer.Register("test", location.FLAG_LOCALFS, NewTestImporter)
 }
 
 func NewTestImporter(ctx context.Context, opts *connectors.Options, proto string, config map[string]string) (importer.Importer, error) {
@@ -39,10 +39,16 @@ func NewTestImporter(ctx context.Context, opts *connectors.Options, proto string
 	}, nil
 }
 
-func (f *TestImporter) Root() string          { return f.scanDir }
-func (f *TestImporter) Origin() string        { return "localhost" }
-func (f *TestImporter) Type() string          { return "test" }
-func (f *TestImporter) Flags() location.Flags { return 0 }
+func (f *TestImporter) Root() string   { return f.scanDir }
+func (f *TestImporter) Origin() string { return "localhost" }
+func (f *TestImporter) Type() string   { return "test" }
+
+func (f *TestImporter) Flags() location.Flags {
+	// in this example we're going to use deal with files on the
+	// disk; we can then ask plakar to resolve full paths on our
+	// behalf.
+	return location.FLAG_LOCALFS
+}
 
 func (f *TestImporter) Ping(ctx context.Context) error {
 	_, err := os.Stat(f.scanDir)
