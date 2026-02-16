@@ -1,6 +1,5 @@
 name: test-importer
 description: Import files from local filesystem
-version: 1.0.0
 connectors:
   - type: importer
     executable: ./plakar-integration
