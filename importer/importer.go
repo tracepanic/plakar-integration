@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/connectors/importer"
@@ -22,21 +23,15 @@ func init() {
 	importer.Register("test", 0, NewTestImporter)
 }
 
-func NewTestImporter(ctx context.Context, opts *connectors.Options, name string, config map[string]string) (importer.Importer, error) {
+func NewTestImporter(ctx context.Context, opts *connectors.Options, proto string, config map[string]string) (importer.Importer, error) {
 	loc, ok := config["location"]
 	if !ok {
 		return nil, fmt.Errorf("missing location")
 	}
 
-	prefix := name + "://"
-
-	if len(loc) < len(prefix) || loc[:len(prefix)] != prefix {
-		return nil, fmt.Errorf("location must start with %s", prefix)
-	}
-
-	rawPath := loc[len(prefix):]
+	rawPath := strings.TrimPrefix(loc, proto+"://")
 	if rawPath == "" {
-		return nil, fmt.Errorf("empty path after %s", prefix)
+		return nil, fmt.Errorf("empty path after %s://", proto)
 	}
 
 	rawPath = os.ExpandEnv(rawPath)
