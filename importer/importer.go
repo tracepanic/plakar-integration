@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/connectors/importer"
@@ -24,26 +23,32 @@ func init() {
 }
 
 func NewTestImporter(ctx context.Context, opts *connectors.Options, name string, config map[string]string) (importer.Importer, error) {
-	location, ok := config["location"]
+	loc, ok := config["location"]
 	if !ok {
 		return nil, fmt.Errorf("missing location")
 	}
 
-	// Handle URL-style paths (test:/path becomes /path)
-	// Strip the protocol prefix if present
-	if strings.HasPrefix(location, name+":/") {
-		location = strings.TrimPrefix(location, name+":")
+	prefix := name + "://"
+
+	if len(loc) < len(prefix) || loc[:len(prefix)] != prefix {
+		return nil, fmt.Errorf("location must start with %s", prefix)
 	}
 
-	// Ensure we have an absolute path
-	if !strings.HasPrefix(location, "/") {
-		location = "/" + location
+	rawPath := loc[len(prefix):]
+	if rawPath == "" {
+		return nil, fmt.Errorf("empty path after %s", prefix)
 	}
 
-	// Clean the path
-	cleanPath := filepath.Clean(location)
+	rawPath = os.ExpandEnv(rawPath)
+	if rawPath[:1] == "~" {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			rawPath = filepath.Join(home, rawPath[1:])
+		}
+	}
 
-	// Check if path exists
+	cleanPath := filepath.Clean(rawPath)
+
 	if _, err := os.Stat(cleanPath); err != nil {
 		return nil, fmt.Errorf("cannot access location: %w", err)
 	}
@@ -71,17 +76,13 @@ func (f *TestImporter) Import(ctx context.Context, records chan<- *connectors.Re
 	}
 
 	return filepath.WalkDir(f.scanDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil // Skip errors
-		}
-
-		if d.IsDir() {
-			return nil // Skip directories
+		if err != nil || d.IsDir() {
+			return nil
 		}
 
 		info, err := d.Info()
 		if err != nil {
-			return nil // Skip if can't stat
+			return nil
 		}
 
 		fi := objects.FileInfo{
