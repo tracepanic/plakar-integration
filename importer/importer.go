@@ -66,12 +66,15 @@ func (f *TestImporter) Ping(ctx context.Context) error {
 func (f *TestImporter) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
 	defer close(records)
 
-	if err := f.Ping(ctx); err != nil {
-		return err
-	}
-
 	return filepath.WalkDir(f.scanDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+		if err != nil {
+			if path == f.scanDir {
+				return err
+			}
+			return nil
+		}
+
+		if d.IsDir() {
 			return nil
 		}
 
