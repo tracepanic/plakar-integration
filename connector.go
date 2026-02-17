@@ -102,7 +102,8 @@ func (f *testConnector) Export(ctx context.Context, records <-chan *connectors.R
 	defer close(results)
 
 	for record := range records {
-		path := filepath.Join(f.scanDir, record.Pathname)
+		pathname := strings.TrimPrefix(record.Pathname, "/")
+		path := filepath.Join(f.scanDir, pathname)
 
 		dir := filepath.Dir(path)
 		if err := os.MkdirAll(dir, 0755); err != nil {
