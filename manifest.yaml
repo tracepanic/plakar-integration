@@ -1,8 +1,14 @@
-name: test-importer
+name: test-integration
 description: Import files from local filesystem
 connectors:
   - type: importer
-    executable: ./plakar-integration
+    executable: ./test-importer
+    homepage: https://github.com/tracepanic/plakar-integration
+    license: ISC
+    protocols: [test]
+    flags: [localfs]
+  - type: exporter
+    executable: ./test-exporter
     homepage: https://github.com/tracepanic/plakar-integration
     license: ISC
     protocols: [test]
