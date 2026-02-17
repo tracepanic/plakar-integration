@@ -6,3 +6,4 @@ connectors:
     homepage: https://github.com/tracepanic/plakar-integration
     license: ISC
     protocols: [test]
+    flags: [localfs]
