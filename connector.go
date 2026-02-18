@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/PlakarKorp/kloset/connectors"
 	"github.com/PlakarKorp/kloset/connectors/exporter"
@@ -16,9 +14,9 @@ import (
 	"github.com/PlakarKorp/kloset/objects"
 )
 
-type testConnector struct {
-	scanDir string
-}
+type testConnector struct{}
+
+const FILE = "/home/tracepanic/Documents/notes.md"
 
 func init() {
 	importer.Register("test", location.FLAG_LOCALFS, NewImporter)
@@ -26,30 +24,14 @@ func init() {
 }
 
 func NewImporter(ctx context.Context, opts *connectors.Options, proto string, config map[string]string) (importer.Importer, error) {
-	return newConnector(proto, config)
+	return &testConnector{}, nil
 }
 
 func NewExporter(ctx context.Context, opts *connectors.Options, proto string, config map[string]string) (exporter.Exporter, error) {
-	return newConnector(proto, config)
+	return &testConnector{}, nil
 }
 
-func newConnector(proto string, config map[string]string) (*testConnector, error) {
-	loc, ok := config["location"]
-	if !ok {
-		return nil, fmt.Errorf("missing location")
-	}
-
-	scanDir := strings.TrimPrefix(loc, proto+"://")
-	if scanDir == "" {
-		return nil, fmt.Errorf("empty path after %s://", proto)
-	}
-
-	return &testConnector{
-		scanDir: scanDir,
-	}, nil
-}
-
-func (f *testConnector) Root() string   { return f.scanDir }
+func (f *testConnector) Root() string   { return "/home/tracepanic/Documents" }
 func (f *testConnector) Origin() string { return "localhost" }
 func (f *testConnector) Type() string   { return "test" }
 
@@ -58,76 +40,48 @@ func (f *testConnector) Flags() location.Flags {
 }
 
 func (f *testConnector) Ping(ctx context.Context) error {
-	_, err := os.Stat(f.scanDir)
-	return err
+	return nil
 }
 
 func (f *testConnector) Import(ctx context.Context, records chan<- *connectors.Record, results <-chan *connectors.Result) error {
 	defer close(records)
 
-	return filepath.WalkDir(f.scanDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			if path == f.scanDir {
-				return err
-			}
-			return nil
-		}
+	info, err := os.Stat(FILE)
+	if err != nil {
+		return err
+	}
 
-		if d.IsDir() {
-			return nil
-		}
+	fi := objects.FileInfo{
+		Lname:    filepath.Base(FILE),
+		Lsize:    info.Size(),
+		Lmode:    info.Mode(),
+		LmodTime: info.ModTime(),
+		Ldev:     1,
+	}
 
-		info, err := d.Info()
-		if err != nil {
-			return nil
-		}
-
-		fi := objects.FileInfo{
-			Lname:    filepath.Base(path),
-			Lsize:    info.Size(),
-			Lmode:    info.Mode(),
-			LmodTime: info.ModTime(),
-			Ldev:     1,
-		}
-
-		records <- connectors.NewRecord(path, "", fi, nil, func() (io.ReadCloser, error) {
-			return os.Open(path)
-		})
-
-		return nil
+	records <- connectors.NewRecord(FILE, "", fi, nil, func() (io.ReadCloser, error) {
+		return os.Open(FILE)
 	})
+
+	return nil
 }
 
 func (f *testConnector) Export(ctx context.Context, records <-chan *connectors.Record, results chan<- *connectors.Result) error {
 	defer close(results)
 
 	for record := range records {
-		pathname := strings.TrimPrefix(record.Pathname, "/")
-		path := filepath.Join(f.scanDir, pathname)
-
-		dir := filepath.Dir(path)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			results <- record.Error(err)
-			continue
-		}
-
-		fp, err := os.Create(path)
-		if err != nil {
-			results <- record.Error(err)
-			continue
-		}
+		fmt.Fprintf(os.Stdout, "--- %s ---\n", record.Pathname)
 
 		if record.Reader != nil {
-			_, err = io.Copy(fp, record.Reader)
+			if _, err := io.Copy(os.Stdout, record.Reader); err != nil {
+				results <- record.Error(err)
+				continue
+			}
 			record.Close()
+			fmt.Fprintln(os.Stdout)
 		}
-		fp.Close()
 
-		if err != nil {
-			results <- record.Error(err)
-		} else {
-			results <- record.Ok()
-		}
+		results <- record.Ok()
 	}
 
 	return nil
