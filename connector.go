@@ -70,15 +70,14 @@ func (f *testConnector) Export(ctx context.Context, records <-chan *connectors.R
 	defer close(results)
 
 	for record := range records {
-		fmt.Fprintf(os.Stdout, "--- %s ---\n", record.Pathname)
+		fmt.Fprintf(os.Stderr, "--- %s ---\n", record.Pathname)
 
 		if record.Reader != nil {
-			if _, err := io.Copy(os.Stdout, record.Reader); err != nil {
+			if _, err := io.Copy(os.Stderr, record.Reader); err != nil {
 				results <- record.Error(err)
 				continue
 			}
-			record.Close()
-			fmt.Fprintln(os.Stdout)
+			fmt.Fprintln(os.Stderr)
 		}
 
 		results <- record.Ok()
