@@ -15,8 +15,6 @@ body:
       label: Describe the bug
       description: A clear and concise description of what the bug is.
       placeholder: What happened?
-    validations:
-      required: true
 
   - type: textarea
     id: reproduce
@@ -27,16 +25,12 @@ body:
         1. Run `plakar ...`
         2. Then run `plakar ...`
         3. See error
-    validations:
-      required: true
 
   - type: textarea
     id: expected
     attributes:
       label: Expected behavior
       description: What did you expect to happen?
-    validations:
-      required: true
 
   - type: textarea
     id: actual
@@ -44,8 +38,6 @@ body:
       label: Actual behavior
       description: What actually happened? Paste error messages or panic traces here.
       render: shell
-    validations:
-      required: true
 
   - type: markdown
     attributes:
@@ -60,8 +52,6 @@ body:
       label: Plakar version
       description: Run `plakar version`
       placeholder: e.g. v1.1.0
-    validations:
-      required: true
 
   - type: textarea
     id: plugin-versions
@@ -76,8 +66,6 @@ body:
       label: OS, version and architecture
       description: Run `uname -srm` on Linux/macOS, or describe your system on Windows.
       placeholder: e.g. Linux 6.18.7-arch1-1 x86_64 / macOS 15.3 arm64 / Windows 11 x86_64
-    validations:
-      required: true
 
   - type: markdown
     attributes:
@@ -91,8 +79,6 @@ body:
       label: Store location
       description: Where is the store? (local path, S3 bucket URL, SFTP URL, etc.) Redact sensitive parts.
       placeholder: e.g. /mnt/backup, s3://my-bucket/plakar, sftp://user@host/path
-    validations:
-      required: true
 
   - type: input
     id: backup-source
@@ -100,8 +86,6 @@ body:
       label: Backup source location
       description: What are you backing up? (local path, S3 bucket URL, SFTP URL, etc.) Redact sensitive parts.
       placeholder: e.g. /home/user/documents, s3://my-bucket/data, sftp://user@host/path
-    validations:
-      required: true
 
   - type: input
     id: destination
